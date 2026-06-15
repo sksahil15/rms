@@ -1,5 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Navigation from "./components/Navigation";
+import DisableDarkModeOnMobile from "./components/DisableDarkModeOnMobile";
+import { AuthProvider } from "./context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +25,13 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <AuthProvider>
+          <DisableDarkModeOnMobile />
+          <Navigation />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

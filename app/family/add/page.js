@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon, CheckCircleIcon, AlertCircleIcon } from "lucide-react";
+import { ProtectedRoute } from "../../components/ProtectedRoute";
 
-export default function AddFamilyPage() {
+function AddFamilyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const familyId = searchParams.get("id");
@@ -22,6 +23,7 @@ export default function AddFamilyPage() {
 
   const [formData, setFormData] = useState({
     familyId: "",
+    rationCardNo: "",
     headName: "",
     email: "",
     phone: "",
@@ -30,7 +32,7 @@ export default function AddFamilyPage() {
     postalCode: "",
     category: "",
     memberCount: 1,
-    members: [{ name: "", cardNumber: "" }],
+    members: [{ name: "", cardNumber: "", gender: "", age: "", fathersHusbandName: "" }],
     monthlyIncome: "",
     status: "pending",
     notes: "",
@@ -201,17 +203,32 @@ export default function AddFamilyPage() {
               {/* Family ID */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Ration Card Number <span className="text-red-500">*</span>
+                  Family ID <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   name="familyId"
                   value={formData.familyId}
                   onChange={handleInputChange}
-                  placeholder="e.g., FAM-001"
+                  placeholder="e.g., 001"
                   required
                   disabled={isEditing}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              {/* Ration Card No */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ration Card No
+                </label>
+                <input
+                  type="text"
+                  name="rationCardNo"
+                  value={formData.rationCardNo}
+                  onChange={handleInputChange}
+                  placeholder="e.g., RC-001"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -332,7 +349,7 @@ export default function AddFamilyPage() {
                         memberCount: newCount,
                         members: [
                           ...prev.members,
-                          { name: "", cardNumber: "" },
+                          { name: "", cardNumber: "", gender: "", age: "", fathersHusbandName: "" },
                         ],
                       }));
                     }
@@ -355,14 +372,17 @@ export default function AddFamilyPage() {
                       Name
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      Card Number 
+                      Gender
                     </th>
-                    {/* <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
                       Age
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      CNIC
-                    </th> */}
+                      Father/Husband Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      Card Number 
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
@@ -380,9 +400,45 @@ export default function AddFamilyPage() {
                         />
                       </td>
                       <td className="px-4 py-3">
+                        <select
+                          value={member.gender || ""}
+                          onChange={(e) =>
+                            handleMemberChange(index, "gender", e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={member.cardNumber}
+                          value={member.age || ""}
+                          onChange={(e) =>
+                            handleMemberChange(index, "age", e.target.value)
+                          }
+                          placeholder="Age"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          value={member.fathersHusbandName || ""}
+                          onChange={(e) =>
+                            handleMemberChange(index, "fathersHusbandName", e.target.value)
+                          }
+                          placeholder="Father/Husband Name"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={member.cardNumber || ""}
                           onChange={(e) =>
                             handleMemberChange(
                               index,
@@ -444,5 +500,13 @@ export default function AddFamilyPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AddFamilyPageWrapper() {
+  return (
+    <ProtectedRoute>
+      <AddFamilyPage />
+    </ProtectedRoute>
   );
 }
