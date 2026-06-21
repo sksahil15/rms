@@ -2,7 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { SearchIcon, FilterIcon, PlusIcon, EditIcon, DeleteIcon, XIcon } from "lucide-react";
+import {
+  SearchIcon,
+  FilterIcon,
+  PlusIcon,
+  EditIcon,
+  DeleteIcon,
+  XIcon,
+} from "lucide-react";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 function DashboardPage() {
@@ -12,23 +19,12 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [expandedFamilies, setExpandedFamilies] = useState({});
 
-  // Hide nav when searching on mobile
-  useEffect(() => {
-    const nav = document.querySelector("nav");
-    if (nav) {
-      if (searchQuery.trim() !== "") {
-        nav.classList.add("hidden");
-        nav.classList.remove("md:flex");
-      } else {
-        nav.classList.remove("hidden");
-      }
-    }
-    return () => {
-      if (nav) {
-        nav.classList.remove("hidden");
-      }
-    };
-  }, [searchQuery]);
+  const toggleExpanded = (familyId) => {
+    setExpandedFamilies((prev) => ({
+      ...prev,
+      [familyId]: !prev[familyId],
+    }));
+  };
 
   useEffect(() => {
     const fetchFamilies = async () => {
@@ -51,8 +47,8 @@ function DashboardPage() {
   const handleLiftedChange = async (familyId, lifted) => {
     setFamilies((prev) =>
       prev.map((family) =>
-        family._id === familyId ? { ...family, lifted } : family
-      )
+        family._id === familyId ? { ...family, lifted } : family,
+      ),
     );
     try {
       const response = await fetch(`/api/families/${familyId}/lifted`, {
@@ -86,18 +82,11 @@ function DashboardPage() {
     }
   };
 
-  const toggleExpanded = (familyId) => {
-    setExpandedFamilies((prev) => ({
-      ...prev,
-      [familyId]: !prev[familyId],
-    }));
-  };
-
   // Filter and search
   const filteredFamilies = useMemo(() => {
     return families.filter((family) => {
       const queryLower = searchQuery.toLowerCase();
-      
+
       // Check if search matches family ID, head name, or phone
       const matchesHeadOrFamily =
         family.headName.toLowerCase().includes(queryLower) ||
@@ -105,9 +94,10 @@ function DashboardPage() {
         family.phone.includes(searchQuery);
 
       // Check if search matches any member's name or card number
-      const matchesMember = family.members.some((member) =>
-        member.name.toLowerCase().includes(queryLower) ||
-        String(member.cardNumber).toLowerCase().includes(queryLower)
+      const matchesMember = family.members.some(
+        (member) =>
+          member.name.toLowerCase().includes(queryLower) ||
+          String(member.cardNumber).toLowerCase().includes(queryLower),
       );
 
       const matchesSearch = matchesHeadOrFamily || matchesMember;
@@ -167,359 +157,479 @@ function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      {/* Header
-      <div className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-          <div className="flex justify-between items-start gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
-                Dashboard
-              </h1>
-              <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-                Manage and search ration families
-              </p>
-            </div>
-            <Link
-              href="/family/add"
-              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium text-xs sm:text-base rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 whitespace-nowrap"
-            >
-              <PlusIcon size={18} className="sm:size-5" />
-              <span className="hidden sm:inline">Add Family</span>
-              <span className="sm:hidden">Add</span>
-            </Link>
-          </div>
+    <div>
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 pt-4 pb-3">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Families</h1>
+          <Link
+            href="/family/add"
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm shadow-blue-200"
+          >
+            <PlusIcon size={16} />
+            <span>Add Family</span>
+          </Link>
         </div>
-      </div> */}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Floating Mobile Search Bar */}
-        {searchQuery.trim() !== "" && (
-          <div className="fixed md:hidden top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 p-3 z-50">
-            <div className="flex items-center gap-2">
-              <div className="flex-1 relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-600" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                />
+        {/* Stats Row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {stats.map((stat, index) => {
+            const colorMap = {
+              blue: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+              green: "bg-green-50 text-green-700 ring-1 ring-green-200",
+              red: "bg-red-50 text-red-700 ring-1 ring-red-200",
+              yellow: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+            };
+            const dotMap = {
+              blue: "bg-blue-500",
+              green: "bg-green-500",
+              red: "bg-red-500",
+              yellow: "bg-amber-500",
+            };
+            return (
+              <div
+                key={index}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${colorMap[stat.color]}`}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotMap[stat.color]}`}></span>
+                <span className="font-bold">{stat.value}</span>
+                <span className="opacity-70 font-medium">{stat.label}</span>
               </div>
-              <button
-                onClick={() => setSearchQuery("")}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition"
-              >
-                <XIcon size={20} className="text-gray-600 dark:text-gray-400" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Add top padding when search is active on mobile */}
-        <div className={searchQuery.trim() !== "" ? "md:pt-0 pt-16" : ""}>
-        {/* Stats Cards - Hide on mobile when searching */}
-        {searchQuery.trim() === "" && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className={`border rounded-lg p-3 sm:p-6 ${getStatColorClass(stat.color)}`}
-            >
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium mb-1 sm:mb-2">
-                {stat.label}
-              </p>
-              <p className="text-lg sm:text-3xl font-bold text-gray-900 dark:text-white">
-                {stat.value}
-              </p>
-            </div>
-          ))}
-        </div>
-        )}
-
-        {/* Search and Filter Section - Hide on mobile when searching */}
-        {searchQuery.trim() === "" && (
-        <div className="sticky top-0 md:relative bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-3 sm:p-6 mb-6 sm:mb-8 z-40">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-            {/* Search Bar */}
-            <div className="md:col-span-2 relative">
-              <SearchIcon
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-600"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
-              />
-            </div>
-
-            {/* Filter */}
-            <div className="relative">
-              <FilterIcon
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-600"
-                size={18}
-              />
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 appearance-none transition"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        )}
-
-        {/* Results Count */}
-        <div className="mb-3 sm:mb-4">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Showing{" "}
-            <span className="font-bold text-gray-900 dark:text-white">
-              {filteredFamilies.length}
-            </span>{" "}
-            of{" "}
-            <span className="font-bold text-gray-900 dark:text-white">
-              {families.length}
-            </span>{" "}
-            families
-          </p>
-        </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 px-3 sm:px-6 py-8 sm:py-12 text-center">
-            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-lg">Loading families...</p>
-          </div>
-        )}
-
-        {/* Families Table - Desktop Only */}
-        {!loading && filteredFamilies.length > 0 && (
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-blue-600 dark:bg-blue-900 text-white border-b border-blue-400">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider w-12">
-                      
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                      Sl No
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                      Card No
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                      HOF Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                      Members Info
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                      Mobile
-                    </th>
-                    <th colSpan="3" className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                  {filteredFamilies.map((family, familyIndex) => [
-                    /* Family Header Row */
-                    <tr key={`${family._id}-header`} className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/50 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/50 dark:hover:to-blue-900/70 transition-colors">
-                      <td className="px-4 py-3 text-sm">
-                        <button
-                          onClick={() => toggleExpanded(family._id)}
-                          className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                        >
-                          <svg
-                            className={`w-5 h-5 text-gray-600 dark:text-gray-300 transition-transform ${expandedFamilies[family._id] ? 'rotate-90' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400">{familyIndex + 1}</td>
-                      <td className="px-4 py-3 text-sm font-medium">{family.rationCardNo || '-'}</td>
-                      <td className="px-4 py-3 text-sm">{family.category}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{family.headName}</td>
-                      <td colSpan="2" className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {family.members.length} member{family.members.length !== 1 ? 's' : ''}
-                      </td>
-                      <td className="px-4 py-3 text-sm">{family.phone}</td>
-                      <td className="px-4 py-3 text-center text-xs">
-                        <Link href={`/family/add?id=${family._id}`} className="text-blue-600 dark:text-blue-400 hover:underline">Edit</Link>
-                      </td>
-                    </tr>,
-                    /* Member Rows (show when expanded) */
-                    ...(expandedFamilies[family._id] ? family.members.map((member, memberIndex) => (
-                      <tr key={`${family._id}-${memberIndex}`} className="bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                        <td colSpan="1" className="px-4 py-3"></td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{familyIndex + 1}.{memberIndex + 1}</td>
-                        <td className="px-4 py-3 text-sm">{member.cardNumber || '-'}</td>
-                        <td className="px-4 py-3 text-sm">{family.category}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <div className="font-medium text-gray-900 dark:text-white">{member.name}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Gender: {member.gender || '-'} | Age: {member.age || '-'}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">FH: {member.fathersHusbandName || '-'}</div>
-                        </td>
-                        <td colSpan="2" className="px-4 py-3"></td>
-                        <td className="px-4 py-3 text-center text-xs"></td>
-                      </tr>
-                    )) : []),
-                  ]).flat()}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile/Tablet Card View */}
-            <div className="lg:hidden space-y-3 p-3 sm:p-4">
-              {filteredFamilies.map((family) => (
-                <div
-                  key={family._id}
-                  className="border border-gray-200 dark:border-slate-700 rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-slate-800 hover:shadow-md transition-shadow"
-                >
-                  {/* Header with ID and Status */}
-                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-gray-200 dark:border-slate-700">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Family ID</p>
-                      <p className="text-sm sm:text-base font-bold text-blue-600 dark:text-blue-400">{family.familyId}</p>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(family.status)}`}
-                    >
-                      {family.status.charAt(0).toUpperCase() + family.status.slice(1)}
-                    </span>
-                  </div>
-
-                  {/* Head Information */}
-                  <div className="mb-3 pb-3 border-b border-gray-200 dark:border-slate-700">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Head / Details</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{family.headName}</p>
-                    {family.rationCardNo && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ration Card: {family.rationCardNo}</p>
-                    )}
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Category: {family.category}</p>
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948.684l1.498 7.985a1 1 0 00.502.756l4.06 2.256a1 1 0 001.466-.742c.166-.86-.023-1.467-.6-1.605L9.753 7.75a1 1 0 00-.502-.756L5.733 2.5a2 2 0 00-1.414-.586H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-3.28a1 1 0 00-.948-.684l-1.498-7.985a1 1 0 00-.502-.756L5.733 2.5" />
-                      </svg>
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{family.phone}</p>
-                    </div>
-                  </div>
-
-                  {/* Members */}
-                  {family.members.length > 0 && (
-                    <div className="mb-3 pb-3 border-b border-gray-200 dark:border-slate-700">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Members</p>
-                      <div className="space-y-2">
-                        {family.members.map((member, idx) => (
-                          <div key={idx} className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 p-2 rounded">
-                            <div className="font-medium text-gray-900 dark:text-white mb-1">{member.name}</div>
-                            <div className="space-y-0.5 text-gray-600 dark:text-gray-400">
-                              {member.gender && <div>Gender: {member.gender}</div>}
-                              {member.age && <div>Age: {member.age}</div>}
-                              {member.fathersHusbandName && <div>Father/Husband: {member.fathersHusbandName}</div>}
-                              {member.cardNumber && <div>Card No: {member.cardNumber}</div>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="space-y-2">
-                    {/* Lifted Status - Mobile Friendly Buttons */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleLiftedChange(family._id, true)}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 sm:py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                          family.lifted === true
-                            ? 'bg-green-500 text-white shadow-md'
-                            : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-slate-600'
-                        }`}
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        <span>Lifted</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleLiftedChange(family._id, false)}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 sm:py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                          family.lifted === false
-                            ? 'bg-red-500 text-white shadow-md'
-                            : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-slate-600'
-                        }`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Non-Lifted</span>
-                      </button>
-                    </div>
-
-                    {/* Lifted Complete Badge */}
-                    {family.lifted === true && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Complete
-                      </span>
-                    )}
-
-                    {/* Edit and Delete Buttons */}
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/family/add?id=${family._id}`}
-                        className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded text-xs font-medium transition-colors"
-                      >
-                        <EditIcon size={14} />
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(family._id)}
-                        className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded text-xs font-medium transition-colors"
-                      >
-                        <DeleteIcon size={14} />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && filteredFamilies.length === 0 && (
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 px-3 sm:px-6 py-8 sm:py-12 text-center">
-            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-lg">
-              No families found matching your criteria
-            </p>
-          </div>
-        )}
+            );
+          })}
         </div>
       </div>
+
+      {/* Toolbar - Search & Filter */}
+      <div className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          {/* Search - full width on mobile */}
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by name, ID, card no..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <XIcon size={15} />
+              </button>
+            )}
+          </div>
+          {/* Status Filter */}
+          <div className="relative flex-shrink-0">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="pl-3 pr-7 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer font-medium"
+            >
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+            </select>
+            <FilterIcon className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mt-1.5 px-1">{filteredFamilies.length} of {families.length} families</p>
+      </div>
+
+      {/* Content */}
+      <div className="p-0 sm:p-4 lg:p-6">
+
+          {/* Loading State */}
+          {loading && (
+            <div className="bg-white rounded-xl border border-gray-200 py-16 text-center m-3 sm:m-0">
+              <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-gray-500 text-sm">Loading families...</p>
+            </div>
+          )}
+
+          {/* Families Table */}
+          {!loading && filteredFamilies.length > 0 && (
+            <div className="bg-white rounded-none sm:rounded-xl border-0 sm:border border-gray-200 overflow-hidden sm:shadow-sm">
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full">
+                  {/* <thead className="bg-blue-600 dark:bg-blue-900 text-white border-b border-blue-400">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider w-12"></th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Sl No
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Card No
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        HOF Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Members Info
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Mobile
+                      </th>
+                      <th
+                        colSpan="3"
+                        className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                      >
+                        Action
+                      </th>
+                    </tr>
+                  </thead> */}
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Family ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Names
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Card No
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Category
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Mobile
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredFamilies
+                      .map((family, members, familyIndex) => [
+                        <tr
+                          key={`${family._id}-header`}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          {/* Expand */}
+                          {/* <td className="px-2 py-4">
+                            <button
+                              onClick={() => toggleExpanded(family._id)}
+                              className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center"
+                            >
+                              <svg
+                                className={`w-4 h-4 transition-transform ${
+                                  expandedFamilies[family._id]
+                                    ? "rotate-90"
+                                    : ""
+                                }`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </button>
+                          </td> */}
+                          {/* Family ID */}
+                          <td className="px-4 py-4">
+                            <span className="font-medium">
+                              {family.familyId || "-"}
+                            </span>
+                          </td>
+
+                          {/* Family */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              {/* <div className="px-2 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center font-bold">
+                                {family.members?.[0]?.name
+                                ?.charAt(0)?.toUpperCase()}
+                              </div> */}
+
+                              <div>
+                                {/* <p className="px-2  font-semibold text-slate-900 dark:text-white">
+                                  {family.members?.[0]?.name}
+                                </p> */}
+                                <p className="px-2  text-sm text-slate-500 dark:text-slate-400">
+                                  {family.members?.map((member, index) => (
+                                    <span
+                                      key={index}
+                                      className="block text-xs text-slate-900"
+                                    >
+                                      {member.name}
+                                    </span>
+                                  ))}
+                                </p>
+
+                                {/* <p className="px-2 text-xs text-slate-500">
+                                  Family #{family.familyId}
+                                </p> */}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Card */}
+                          <td className="px-4 py-4">
+                            {family.members?.map((member, index) => (
+                                    <span
+                                      key={index}
+                                      className="block text-xs text-slate-900"
+                                    >
+                                      {member.cardNumber || "-"}
+                                    </span>
+                                  ))}
+                          </td>
+
+                          {/* Category */}
+                          <td className="px-4 py-4">
+                            <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-medium">
+                              {family.category}
+                            </span>
+                          </td>
+
+                          {/* Members */}
+                          {/* <td className="px-4 py-4">
+                            <span className="font-semibold">
+                              {family.members.length}
+                            </span>
+                          </td> */}
+
+                          {/* Mobile */}
+                          <td className="px-4 py-4">{family.phone}</td>
+
+                          {/* Status */}
+                          <td className="px-4 py-4">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                family.lifted
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-orange-100 text-orange-700"
+                              }`}
+                            >
+                              {family.lifted ? "Lifted" : "Pending"}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-4">
+                            <div className="flex justify-center gap-2">
+                              <Link
+                                href={`/family/add?id=${family._id}`}
+                                className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center"
+                              >
+                                <EditIcon size={16} />
+                              </Link>
+
+                              <button
+                                onClick={() => handleDelete(family._id)}
+                                className="w-9 h-9 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center"
+                              >
+                                <DeleteIcon size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>,
+
+                        ...(expandedFamilies[family._id]
+                          ? family.members.map((member, memberIndex) => (
+                              <tr
+                                key={`${family._id}-${memberIndex}`}
+                                className="bg-slate-50 dark:bg-slate-800/50"
+                              >
+                                <td></td>
+                                {/* <td className="px-2 py-3 text-sm text-slate-500">
+                                  Member {memberIndex + 1}
+                                </td> */}
+                                <td className="px-4 py-3 text-sm">-</td>
+
+                                <td>
+                                  <div className="px-2 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center font-bold">
+                                    {member.name?.charAt(0)}
+                                  </div>
+                                </td>
+
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div>
+                                      <div className="px-4  font-semibold text-slate-900 dark:text-white">
+                                        {member.name}
+                                      </div>
+
+                                      <div className="text-xs text-slate-500">
+                                        {member.gender} • Age {member.age}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                  {member.cardNumber || "-"}
+                                </td>
+
+                                <td className="px-4 py-3 text-sm">
+                                  {family.category}
+                                </td>
+
+                                <td className="px-4 py-4">{family.phone}</td>
+
+                                {/* <td className="px-4 py-3 text-sm">-</td>
+
+                                <td className="px-4 py-3 text-sm">-</td> */}
+                              </tr>
+                            ))
+                          : []),
+                      ])
+                      .flat()}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile/Tablet Card View */}
+              <div className="lg:hidden divide-y divide-gray-100">
+                {filteredFamilies.map((family) => (
+                  <div key={family._id} className="bg-white">
+                    {/* Status accent bar */}
+                    <div className={`h-0.5 w-full ${family.lifted ? 'bg-green-400' : 'bg-amber-400'}`} />
+                    
+                    <div className="p-4">
+                      {/* Card Header: avatar + name + status badge */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <span className="text-white font-bold text-base">{family.familyId}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <p className="font-semibold text-gray-900 text-base leading-tight truncate">{family.headName}</p>
+                          <p className="text-sm text-gray-500 mt-0.5">{family.phone}</p>
+                        </div>
+                        <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold mt-0.5 ${
+                          family.lifted
+                            ? 'bg-green-100 text-green-700 ring-1 ring-green-200'
+                            : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            family.lifted ? 'bg-green-500' : 'bg-amber-500'
+                          }`}></span>
+                          {family.lifted ? 'Lifted' : 'Pending'}
+                        </span>
+                      </div>
+
+                      {/* Info chips row */}
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold">
+                          {family.category}
+                        </span>
+                        <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium">
+                          {family.members.length} member{family.members.length !== 1 ? 's' : ''}
+                        </span>
+                        {family.rationCardNo && (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-mono">
+                            {family.rationCardNo}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Members list */}
+                      {family.members.length > 0 && (
+                        <div className="mb-3 bg-gray-50 rounded-2xl overflow-hidden">
+                          {family.members.map((member, idx) => (
+                            <div key={idx} className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 last:border-0">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-500 shadow-sm">
+                                  {member.name?.charAt(0)?.toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{member.name}</p>
+                                  {(member.gender || member.age) && (
+                                    <p className="text-xs text-gray-400">
+                                      {[member.gender, member.age ? `Age ${member.age}` : null].filter(Boolean).join(' · ')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {member.cardNumber && (
+                                <span className="text-xs text-gray-500 font-mono ml-2 flex-shrink-0 bg-white px-2 py-1 rounded-lg border border-gray-200">
+                                  {member.cardNumber}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="space-y-2">
+                        {/* Lifted toggle */}
+                        <div className="flex rounded-xl overflow-hidden border border-gray-200">
+                          <button
+                            onClick={() => handleLiftedChange(family._id, true)}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors ${
+                              family.lifted === true
+                                ? 'bg-green-500 text-white'
+                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Lifted
+                          </button>
+                          <div className="w-px bg-gray-200"></div>
+                          <button
+                            onClick={() => handleLiftedChange(family._id, false)}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors ${
+                              family.lifted === false
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            </svg>
+                            Pending
+                          </button>
+                        </div>
+                        {/* Edit / Delete */}
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/family/add?id=${family._id}`}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-sm font-semibold transition-colors"
+                          >
+                            <EditIcon size={14} />Edit
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(family._id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-sm font-semibold transition-colors"
+                          >
+                            <DeleteIcon size={14} />Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && filteredFamilies.length === 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 py-16 text-center m-3 sm:m-0">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <SearchIcon size={20} className="text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-sm font-medium">No families found</p>
+              <p className="text-gray-400 text-xs mt-1">Try adjusting your search or filter</p>
+            </div>
+          )}
+        </div>
     </div>
   );
 }

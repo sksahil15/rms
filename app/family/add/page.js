@@ -145,24 +145,26 @@ function AddFamilyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium mb-4"
-          >
-            <ArrowLeftIcon size={20} />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isEditing ? "Edit Family" : "Add New Family"}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            {isEditing ? "Update family information in the system" : "Register a new ration family in the system"}
-          </p>
+    <div className="min-h-screen bg-gray-50 py-0">
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 font-medium mb-2 transition-colors"
+            >
+              <ArrowLeftIcon size={16} />
+              Back to Dashboard
+            </Link>
+            <h1 className="text-xl font-semibold text-gray-900">
+              {isEditing ? "Edit Family" : "Add New Family"}
+            </h1>
+          </div>
         </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
 
         {/* Loading State - only show after mount to prevent hydration mismatch */}
         {isMounted && pageLoading && (
